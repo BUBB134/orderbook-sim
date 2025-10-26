@@ -1,6 +1,7 @@
 #include "order_book.hpp"
-#include <cassert>
 #include <algorithm>
+#include <cassert>
+#include <optional>
 
 OrderBook::~OrderBook()
 {
@@ -53,7 +54,7 @@ std::vector<Trade> OrderBook::add_limit(OrderId id, Side side, Price px, Qty qty
         match_sell_against_buy(qty, px, ts, trades);
         if (qty > 0)
         {
-            Order *o - create_order(idm side, px, qty, ts);
+            Order *o = create_order(id, side, px, qty, ts);
             PriceLevel &lvl = get_or_create_level(Side::SELL, px);
             lvl.push_back(o);
             index_insert(o);
@@ -79,7 +80,7 @@ std::vector<Trade> OrderBook::add_market(OrderId id, Side side, Qty qty, TimeNs 
     }
     else
     {
-        match_sell_against_buy(qty, std::numeric_limits<Price>::min(), ts, trades)
+        match_sell_against_buy(qty, std::numeric_limits<Price>::min(), ts, trades);
     }
 #ifndef NDEBUG
     validate();
@@ -111,7 +112,7 @@ bool OrderBook::cancel(OrderId id)
 #ifndef NDEBUG
     validate();
 #endif
-    return trades;
+    return true;
 }
 
 bool OrderBook::replace(OrderId id, std::optional<Price> new_px, std::optional<Qty> new_qty, TimeNs ts)
@@ -138,14 +139,14 @@ bool OrderBook::replace(OrderId id, std::optional<Price> new_px, std::optional<Q
 #ifndef NDEBUG
         validate();
 #endif
-        return trades;
+        return true;
     }
     // For price changes or qty increase, do cancel + re-add (simpler, preserves FIFO rules)
     bool ok = cancel(id);
     if (!ok)
         return false;
 
-    price px = price_change ? new_px.value() : old_px;
+    Price px = price_change ? new_px.value() : old_px;
     Qty q = new_qty.has_value() ? new_qty.value() : old_qty;
 
     if (q <= 0)
