@@ -164,7 +164,7 @@ bool OrderBook::replace(OrderId id, std::optional<Price> new_px, std::optional<Q
 #ifndef NDEBUG
     validate();
 #endif
-    return trades;
+    return true;
 }
 
 // -----Queries-----
