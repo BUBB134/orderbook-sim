@@ -38,7 +38,7 @@ std::vector<Trade> OrderBook::add_limit(OrderId id, Side side, Price px, Qty qty
     if (side == Side::BUY)
     {
         //  Cross as long as best ask <= buy price
-        match_buy_against_sell(qty, px, ts, trades);
+        match_buy_against_sell(id, qty, px, ts, trades);
         if (qty > 0)
         {
             // Rest remaining
@@ -51,7 +51,7 @@ std::vector<Trade> OrderBook::add_limit(OrderId id, Side side, Price px, Qty qty
     else
     {
         // Sell
-        match_sell_against_buy(qty, px, ts, trades);
+        match_sell_against_buy(id, qty, px, ts, trades);
         if (qty > 0)
         {
             Order *o = create_order(id, side, px, qty, ts);
@@ -76,11 +76,11 @@ std::vector<Trade> OrderBook::add_market(OrderId id, Side side, Qty qty, TimeNs 
     if (side == Side::BUY)
     {
         // Use a very large price so any ask is crossable
-        match_buy_against_sell(qty, std::numeric_limits<Price>::max(), ts, trades);
+        match_buy_against_sell(id, qty, std::numeric_limits<Price>::max(), ts, trades);
     }
     else
     {
-        match_sell_against_buy(qty, std::numeric_limits<Price>::min(), ts, trades);
+        match_sell_against_buy(id, qty, std::numeric_limits<Price>::min(), ts, trades);
     }
 #ifndef NDEBUG
     validate();
@@ -127,7 +127,6 @@ bool OrderBook::replace(OrderId id, std::optional<Price> new_px, std::optional<Q
     Qty old_qty = o->qty;
 
     bool price_change = new_px.has_value() && new_px.value() != old_px;
-    bool qty_increase = new_qty.has_value() && new_qty.value() > old_qty;
 
     if (!price_change && new_qty.value() < old_qty)
     {
@@ -289,7 +288,7 @@ void OrderBook::index_erase(Order *o)
 }
 
 // Core matching routines
-void OrderBook::match_buy_against_sell(Qty &taker_qty, Price taker_price, TimeNs ts, std::vector<Trade> &out_trades)
+void OrderBook::match_buy_against_sell(OrderId taker_id, Qty &taker_qty, Price taker_price, TimeNs ts, std::vector<Trade> &out_trades)
 {
     while (taker_qty > 0)
     {
@@ -307,7 +306,7 @@ void OrderBook::match_buy_against_sell(Qty &taker_qty, Price taker_price, TimeNs
 
             // Emit trade at makers price
             out_trades.push_back(Trade{
-                /*taker_id =*/0,
+                /*taker_id =*/taker_id,
                 /*maker_id =*/maker->id,
                 /*taker_side =*/Side::BUY,
                 /*price =*/ask_lvl.price,
@@ -337,7 +336,7 @@ void OrderBook::match_buy_against_sell(Qty &taker_qty, Price taker_price, TimeNs
     }
 }
 
-void OrderBook::match_sell_against_buy(Qty &taker_qty, Price taker_price, TimeNs ts, std::vector<Trade> &out_trades)
+void OrderBook::match_sell_against_buy(OrderId taker_id, Qty &taker_qty, Price taker_price, TimeNs ts, std::vector<Trade> &out_trades)
 {
     while (taker_qty > 0)
     {
@@ -355,7 +354,7 @@ void OrderBook::match_sell_against_buy(Qty &taker_qty, Price taker_price, TimeNs
 
             // Emit trade at makers price
             out_trades.push_back(Trade{
-                /*taker_id =*/0,
+                /*taker_id =*/taker_id,
                 /*maker_id =*/maker->id,
                 /*taker_side =*/Side::SELL,
                 /*price =*/bid_lvl.price,

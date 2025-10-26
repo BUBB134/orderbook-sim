@@ -61,8 +61,8 @@ private:
     void erase_level_if_empty(Side side, Price px);
 
     // Core Matching paths
-    void match_buy_against_sell(Qty& taker_qty, Price taker_price, TimeNs ts, std::vector<Trade>& out_trades);
-    void match_sell_against_buy(Qty& taker_qty, Price taker_price, TimeNs ts, std::vector<Trade>& out_trades);
+    void match_buy_against_sell(OrderId taker_id, Qty& taker_qty, Price taker_price, TimeNs ts, std::vector<Trade>& out_trades);
+    void match_sell_against_buy(OrderId taker_id, Qty& taker_qty, Price taker_price, TimeNs ts, std::vector<Trade>& out_trades);
 
     // Common Utilities 
     std::optional<Price> best_price(Side s) const;
