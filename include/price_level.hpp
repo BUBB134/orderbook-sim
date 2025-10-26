@@ -19,7 +19,7 @@ struct PriceLevel {
     Order* tail {nullptr};
     Qty total_qty {0};
 
-    void push_back{Order* o};
-    void remove{Order* o};
-    bool empty() comst { return head == nullptr; }
+    void push_back(Order* o);
+    void remove(Order* o);
+    bool empty() const { return head == nullptr; }
 };
